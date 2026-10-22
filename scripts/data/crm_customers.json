@@ -1,0 +1,43 @@
+{
+  "_comment": "DEMO DATA — synthetic customers for the AgentOS mock CRM. Not real people.",
+  "customers": [
+    {
+      "customer_id": "CUST-1001",
+      "name": "Dana Whitfield",
+      "email": "dana.whitfield@globex-demo.example",
+      "company": "Globex Manufacturing (Demo)",
+      "segment": "enterprise",
+      "account_value_usd": 184000.0,
+      "last_contact": "2026-09-12",
+      "open_issues": [
+        "Renewal quote for FY27 not yet sent",
+        "Two support tickets open > 14 days (#4521, #4588)"
+      ],
+      "notes": "Key account. Prefers email over calls. Renewal window opens in November."
+    },
+    {
+      "customer_id": "CUST-1002",
+      "name": "Priya Raman",
+      "email": "priya.raman@initech-demo.example",
+      "company": "Initech Solutions (Demo)",
+      "segment": "mid-market",
+      "account_value_usd": 56000.0,
+      "last_contact": "2026-10-02",
+      "open_issues": [
+        "Requested pricing for 25 additional seats"
+      ],
+      "notes": "Expansion opportunity flagged by CSM. Fast decision cycles."
+    },
+    {
+      "customer_id": "CUST-1003",
+      "name": "Marcus Oyelaran",
+      "email": "marcus.o@umbrella-demo.example",
+      "company": "Umbrella Logistics (Demo)",
+      "segment": "smb",
+      "account_value_usd": 9800.0,
+      "last_contact": "2026-07-28",
+      "open_issues": [],
+      "notes": "Quiet account; low product usage in the last 60 days."
+    }
+  ]
+}

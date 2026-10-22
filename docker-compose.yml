@@ -1,0 +1,86 @@
+# AgentOS development/demo stack.
+#
+# NOTE (honest status): this file was authored on a machine without Docker and has
+# not been runtime-verified there. The same commands/images are standard; see
+# docs/troubleshooting.md if a service fails to start.
+#
+# Usage:
+#   cp .env.example .env   (set AGENTOS_SECRET_KEY etc.)
+#   docker compose up -d postgres redis
+#   docker compose run --rm api alembic upgrade head
+#   docker compose run --rm api python -m scripts.seed
+#   docker compose up -d
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: agentos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agentos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      AGENTOS_DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/agentos
+      AGENTOS_REDIS_URL: redis://redis:6379/0
+      AGENTOS_API_HOST: 0.0.0.0
+      AGENTOS_UPLOAD_DIR: /srv/backend/var/uploads
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/srv/backend/var/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    command: ["taskiq", "worker", "app.worker.broker:broker", "--workers", "1"]
+    env_file: .env
+    environment:
+      AGENTOS_DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/agentos
+      AGENTOS_REDIS_URL: redis://redis:6379/0
+      AGENTOS_UPLOAD_DIR: /srv/backend/var/uploads
+    volumes:
+      - uploads:/srv/backend/var/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads:

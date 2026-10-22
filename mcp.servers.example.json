@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy to mcp.servers.json (path set by AGENTOS_MCP_CONFIG_PATH) to enable MCP servers. Discovered tools require human approval before execution and are treated as untrusted.",
+  "servers": [
+    {
+      "name": "demo",
+      "command": "python",
+      "args": ["scripts/mcp_demo_server.py"],
+      "enabled": true
+    }
+  ]
+}
