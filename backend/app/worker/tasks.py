@@ -6,10 +6,23 @@
 - ingest_document_task is idempotent per document (chunks are replaced wholesale).
 """
 
+from taskiq import TaskiqEvents, TaskiqState
+
 from app.core.logging import get_logger
 from app.worker.broker import broker
 
 logger = get_logger("agentos.worker")
+
+
+@broker.on_event(TaskiqEvents.WORKER_STARTUP)
+async def recover_on_startup(_state: TaskiqState) -> None:
+    """Crash recovery: on worker start, sweep tasks whose previous worker died
+    mid-attempt (stale claims). Idempotent; TTL guards live work elsewhere."""
+    from app.services.project_scheduler import recover_stale_tasks
+
+    recovered = await recover_stale_tasks()
+    if recovered:
+        logger.info("recovered stale project tasks on startup", count=len(recovered))
 
 
 @broker.task(retry_on_error=False)

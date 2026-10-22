@@ -21,7 +21,10 @@ AGENT_ARTIFACT_KINDS = {
 
 
 def build_result(task: ProjectTask, run: AgentRun, output: dict | None) -> dict:
-    """Map a completed run's engine-task output into the project task result."""
+    """Map a completed run's engine-task output into the project task result.
+
+    Every artifact carries provenance so downstream agents and reviewers can
+    trace it to the task, attempt, run, and agent that produced it."""
     output = output or {}
     kind = AGENT_ARTIFACT_KINDS.get(task.agent_key or "", "output")
     artifact = {
@@ -33,6 +36,14 @@ def build_result(task: ProjectTask, run: AgentRun, output: dict | None) -> dict:
             if key in output
         },
         "evidence": output.get("evidence", []),
+        "provenance": {
+            "source": "agent",
+            "project_task_id": str(task.id),
+            "task_ordinal": task.ordinal,
+            "attempt": task.attempts,
+            "run_id": str(run.id),
+            "agent": task.agent_key,
+        },
     }
     return {
         "run_id": str(run.id),
@@ -40,6 +51,18 @@ def build_result(task: ProjectTask, run: AgentRun, output: dict | None) -> dict:
         "output": output,
         "artifacts": [artifact],
     }
+
+
+def _has_content(data) -> bool:
+    """Real content, not a hollow container: a dict/list of empty values (an
+    LLM's empty-but-well-shaped answer) does not count as a deliverable."""
+    if isinstance(data, dict):
+        return any(_has_content(v) for v in data.values())
+    if isinstance(data, (list, tuple)):
+        return any(_has_content(v) for v in data)
+    if isinstance(data, str):
+        return bool(data.strip())
+    return data is not None and data is not False
 
 
 def _evaluate_criterion(criterion: dict, result: dict) -> tuple[bool, str]:
@@ -53,7 +76,7 @@ def _evaluate_criterion(criterion: dict, result: dict) -> tuple[bool, str]:
         present = [
             a
             for a in artifacts
-            if a.get("data") and (wanted is None or a.get("kind") == wanted)
+            if _has_content(a.get("data")) and (wanted is None or a.get("kind") == wanted)
         ]
         if present:
             return True, f"{len(present)} artifact(s) present"

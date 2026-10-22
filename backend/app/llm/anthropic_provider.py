@@ -26,7 +26,11 @@ class AnthropicProvider:
             raise LLMError("AGENTOS_ANTHROPIC_API_KEY is not configured")
         from anthropic import AsyncAnthropic
 
-        self._client = AsyncAnthropic(api_key=settings.anthropic_api_key, max_retries=2)
+        self._client = AsyncAnthropic(
+            api_key=settings.anthropic_api_key,
+            max_retries=2,
+            timeout=float(settings.llm_timeout_s),
+        )
         self._model = settings.llm_model
 
     async def complete_structured(
@@ -41,7 +45,7 @@ class AnthropicProvider:
 
         tool_name = "emit_result"
         try:
-            response = await self._client.messages.create(
+            raw = await self._client.messages.with_raw_response.create(
                 model=self._model,
                 max_tokens=max_tokens,
                 system=system,
@@ -64,6 +68,9 @@ class AnthropicProvider:
         except anthropic.APIConnectionError as exc:
             raise LLMTransientError(f"anthropic connection error: {exc}") from exc
 
+        request_id = raw.headers.get("request-id")
+        response = raw.parse()
+
         tool_input = None
         for block in response.content:
             if getattr(block, "type", None) == "tool_use" and block.name == tool_name:
@@ -80,5 +87,6 @@ class AnthropicProvider:
         usage = LLMUsage(
             input_tokens=getattr(response.usage, "input_tokens", None),
             output_tokens=getattr(response.usage, "output_tokens", None),
+            request_id=request_id,
         )
         return parsed, usage

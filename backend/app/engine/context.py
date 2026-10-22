@@ -96,6 +96,8 @@ class AgentContext:
                 "schema": schema.__name__,
                 "input_tokens": usage.input_tokens,
                 "output_tokens": usage.output_tokens,
+                # Opaque provider request id — safe to persist, useful for support.
+                "request_id": usage.request_id,
             },
         )
         return result

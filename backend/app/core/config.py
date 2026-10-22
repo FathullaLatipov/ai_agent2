@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     llm_provider: Literal["anthropic", "none"] = "none"
     anthropic_api_key: str = ""
     llm_model: str = "claude-sonnet-5-5"
+    # Per-request timeout for LLM calls (planning must fail fast, not hang).
+    llm_timeout_s: int = 60
 
     embeddings_provider: Literal["voyage", "openai", "local-hash"] = "local-hash"
     voyage_api_key: str = ""
@@ -74,3 +76,31 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()  # type: ignore[call-arg]
+
+
+class ProductionConfigError(RuntimeError):
+    """Refusing to start with unsafe production configuration."""
+
+
+def validate_production_config(settings: Settings) -> list[str]:
+    """Fail fast on dangerous production config; return non-fatal warnings.
+
+    Development conveniences (example secrets, localhost CORS, demo seeding)
+    must never silently carry into production.
+    """
+    if settings.env != "production":
+        return []
+    if "change-me" in settings.secret_key or len(settings.secret_key) < 32:
+        raise ProductionConfigError(
+            "AGENTOS_SECRET_KEY is the example value or shorter than 32 chars; "
+            "set a strong random secret before running in production"
+        )
+    warnings: list[str] = []
+    if any("localhost" in origin or "127.0.0.1" in origin
+           for origin in settings.frontend_origins):
+        warnings.append(
+            "AGENTOS_FRONTEND_ORIGIN includes a localhost origin in production"
+        )
+    if "postgres:postgres@" in settings.database_url:
+        warnings.append("database uses the default postgres/postgres credentials")
+    return warnings

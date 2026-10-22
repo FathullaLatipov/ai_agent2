@@ -136,6 +136,13 @@ class ToolRegistry:
                 ctx, call, ToolCallStatus.TIMED_OUT, error=f"timed out after {spec.timeout_s}s",
                 recorder=recorder,
             )
+            if not spec.idempotent:
+                # The operation may have executed despite the timeout. Never
+                # hand the engine a retryable error for non-idempotent tools.
+                raise ToolError(
+                    f"tool {tool_name} timed out and is not idempotent — "
+                    "not retrying automatically; verify the external state"
+                ) from exc
             raise ToolTransientError(f"tool {tool_name} timed out") from exc
         except ToolError as exc:
             await self._finish(ctx, call, ToolCallStatus.FAILED, error=str(exc), recorder=recorder)

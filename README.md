@@ -180,10 +180,12 @@ console errors. It requires `npx playwright install chromium` once.
 ## Limitations & unverified surfaces
 
 - **Live LLM calls are unverified**: no Anthropic API key was available during
-  development. The provider is implemented against SDK 2.0 and covered by
-  fake-provider tests; enable with `AGENTOS_LLM_PROVIDER=anthropic` +
-  `AGENTOS_ANTHROPIC_API_KEY`, and run the opt-in tests with `pytest -m live_llm`
-  (none exist yet beyond the contract tests — write yours against your account).
+  development. The provider (SDK 2.0, model `claude-sonnet-5-5`, 60 s timeout)
+  and the PM's LLM planning pipeline are fully covered by fake-provider tests,
+  including malformed/hostile model output; enable live with
+  `AGENTOS_LLM_PROVIDER=anthropic` + `AGENTOS_ANTHROPIC_API_KEY`, then run the
+  opt-in live test: `uv run pytest -m live_llm` (it skips with an explicit
+  reason when the key is absent). See docs/pm-harness.md §3a.
 - **Docker Compose is not runtime-verified** (no Docker on the dev machine). Images
   and commands follow standard patterns; treat the first `docker compose up` as a
   validation step.
@@ -208,7 +210,8 @@ backend/tests/   62 tests: unit, integration, live-ish e2e via inline broker
 backend/alembic/ migrations incl. conditional pgvector + RLS
 frontend/src/    Next.js app: 8 pages, SSE hook, workflow graph, run view
 scripts/         demo MCP server · demo data (synthetic) · RLS role provisioning
-docs/            architecture · security · implementation plan (milestone log) · demo · troubleshooting
+docs/            architecture · security · tooling (tools/permissions/artifacts guide) ·
+                 implementation plan (milestone log) · pm-harness · demo · troubleshooting
 ```
 
 Developer commands: see `Makefile` (or run the underlying commands directly on

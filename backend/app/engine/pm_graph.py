@@ -29,8 +29,14 @@ def build_pm_plan_graph(llm: LLMProvider | None):
         attempts = state.get("attempts", 0) + 1
         try:
             draft = await draft_plan(state["goal"], llm, feedback=state.get("error"))
-        except LLMError:
-            draft = deterministic_plan_draft(state["goal"])  # degrade honestly
+        except LLMError as exc:
+            # Degrade honestly AND visibly: the persisted plan records that the
+            # LLM path was unavailable and a deterministic draft was used.
+            draft = deterministic_plan_draft(state["goal"])
+            draft.notes = (
+                f"LLM planning unavailable ({exc}); deterministic fallback used. "
+                + draft.notes
+            )
         return {"draft": draft.model_dump(mode="json"), "attempts": attempts, "error": ""}
 
     async def validate_node(state: PMPlanState) -> PMPlanState:

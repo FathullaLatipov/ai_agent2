@@ -151,7 +151,9 @@ async def _build_run_for_task(
         if dep.status == PMTaskStatus.SUCCEEDED and dep.result:
             dep_artifacts.extend(dep.result.get("artifacts", []))
             succeeded_deps.append(dep)
-    dep_artifacts.extend(params.get("supplied_artifacts", []))
+    for supplied in params.get("supplied_artifacts", []):
+        provenance = {"source": "owner-supplied", **supplied.get("provenance", {})}
+        dep_artifacts.append({**supplied, "provenance": provenance})
     if dep_artifacts:
         params["dependency_artifacts"] = dep_artifacts
     if task.revision_feedback:

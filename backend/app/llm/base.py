@@ -24,6 +24,8 @@ class LLMTransientError(LLMError):
 class LLMUsage:
     input_tokens: int | None
     output_tokens: int | None
+    # Provider request id (opaque, safe to persist) — for support/debugging.
+    request_id: str | None = None
 
 
 class LLMProvider(Protocol):

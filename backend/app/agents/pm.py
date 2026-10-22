@@ -155,7 +155,15 @@ class PlanDraftError(Exception):
 
 
 def validate_plan_draft(draft: PlanDraft) -> None:
-    """Server-side checks: ref uniqueness, DAG shape, agent capability flow."""
+    """Server-side checks: ref uniqueness, task budget, DAG shape, agent
+    capability flow. Model output is an untrusted proposal until it passes."""
+    from app.core.config import get_settings
+
+    max_tasks = get_settings().max_plan_tasks
+    if len(draft.tasks) > max_tasks:
+        raise PlanDraftError(
+            f"plan proposes {len(draft.tasks)} tasks; the budget allows at most {max_tasks}"
+        )
     refs = [t.ref for t in draft.tasks]
     if len(set(refs)) != len(refs):
         raise PlanDraftError("task refs must be unique")

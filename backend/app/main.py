@@ -27,6 +27,10 @@ if sys.platform == "win32":  # pragma: no cover
 async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.env)
+    from app.core.config import validate_production_config
+
+    for warning in validate_production_config(settings):  # raises on fatal issues
+        logger.warning("production config warning", detail=warning)
     caps = await detect_capabilities(get_engine())
     import app.tools.builtin  # noqa: F401 — register built-in tools
     from app.db.session import get_sessionmaker
