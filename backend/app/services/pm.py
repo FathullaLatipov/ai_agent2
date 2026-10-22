@@ -294,9 +294,24 @@ async def request_agent(
 
         worker_id = f"owner-start-{uuid.uuid4().hex[:8]}"
         if await claim_task(session, task.id, worker_id):
+            from app.services.queueing import QueueUnavailableError, enqueue
             from app.worker.tasks import execute_project_task_attempt
 
-            await execute_project_task_attempt.kiq(str(task.id), worker_id)
+            try:
+                await enqueue(execute_project_task_attempt, str(task.id), worker_id)
+            except QueueUnavailableError:
+                fresh = await session.get(ProjectTask, task.id)
+                if fresh is not None and fresh.status == PMTaskStatus.ASSIGNED:
+                    transition(fresh, PMTaskStatus.READY)
+                    fresh.attempts = max(0, fresh.attempts - 1)  # never ran
+                    await session.commit()
+                return {
+                    "status": "blocked",
+                    "message": (
+                        "The task queue is unavailable right now; the task remains "
+                        "ready and was not executed. Try again shortly."
+                    ),
+                }
             return {
                 "status": "started",
                 "message": f"{capability.name} started on task #{task.ordinal}.",

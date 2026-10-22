@@ -78,8 +78,38 @@ async def submit_run(
     )
     await session.commit()
     await recorder.publish_pending()
-    await enqueue_run(run.id)
+    await _enqueue_or_fail(session, recorder, run)
     return RunSummaryOut.model_validate(run)
+
+
+async def _enqueue_or_fail(session, recorder: EventRecorder, run: AgentRun) -> None:
+    """DB row is committed; if the queue is down, record an honest failed state
+    (recoverable via POST /runs/{id}/retry) and answer 503 — never a silent
+    orphan in 'queued'."""
+    import datetime as dt
+
+    from app.services.queueing import QueueUnavailableError
+
+    try:
+        await enqueue_run(run.id)
+    except QueueUnavailableError as exc:
+        run.status = RunStatus.FAILED
+        run.error = str(exc)
+        run.finished_at = dt.datetime.now(dt.UTC)
+        await recorder.emit(
+            session,
+            run_id=run.id,
+            organization_id=run.organization_id,
+            type="run.failed",
+            payload={"error": run.error},
+        )
+        await session.commit()
+        await recorder.publish_pending()
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"task queue unavailable; run {run.id} was recorded as failed — "
+            "retry it via POST /runs/{id}/retry once the queue is back",
+        ) from exc
 
 
 @router.get("", response_model=RunListOut)
@@ -191,7 +221,7 @@ async def retry_failed_run(
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     await session.commit()
     await recorder.publish_pending()
-    await enqueue_run(run.id)
+    await _enqueue_or_fail(session, recorder, run)
     return RunSummaryOut.model_validate(run)
 
 

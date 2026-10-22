@@ -58,7 +58,10 @@ re-queued or failed honestly, never silently completed.
   `restart: always`) and alert on the absence of task pickup logs. A crashed
   worker is recovered by the startup sweep + claim TTL (15 min default).
 - Redis loss: event publishing degrades gracefully (SSE replays from
-  PostgreSQL on reconnect), but task dispatch fails — treat Redis as required.
+  PostgreSQL on reconnect). Submission paths fail **honestly**: runs are marked
+  failed with a 503 and are retryable, scheduler claims are released so tasks
+  stay READY, approval decisions are preserved (recovery demands fresh
+  authorization for gated tools), and uploads are marked failed with guidance.
   PostgreSQL loss: hard down, by design.
 
 ## Backups & recovery

@@ -95,7 +95,34 @@ async def resume_run_after_decision(session: AsyncSession, approval: ApprovalReq
         return False
     run.status = RunStatus.RUNNING
     await session.commit()
+    from app.services.queueing import QueueUnavailableError, enqueue
     from app.worker.tasks import execute_run_task
 
-    await execute_run_task.kiq(str(run.id))
+    try:
+        await enqueue(execute_run_task, str(run.id))
+    except QueueUnavailableError as exc:
+        # The decision IS recorded; the resume could not be scheduled. Record
+        # an honest failure (retryable). A later retry creates a fresh run and
+        # therefore a FRESH approval request for any gated tool — recovery can
+        # never silently execute work that was not re-authorized.
+        import datetime as dt
+
+        from app.events.recorder import EventRecorder
+        from app.services.project_scheduler import finalize_task_for_run
+
+        run.status = RunStatus.FAILED
+        run.error = str(exc)
+        run.finished_at = dt.datetime.now(dt.UTC)
+        recorder = EventRecorder()
+        await recorder.emit(
+            session,
+            run_id=run.id,
+            organization_id=run.organization_id,
+            type="run.failed",
+            payload={"error": run.error},
+        )
+        await session.commit()
+        await recorder.publish_pending()
+        await finalize_task_for_run(run.id)  # maps the project task honestly
+        return False
     return True

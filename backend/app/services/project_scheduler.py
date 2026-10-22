@@ -122,10 +122,24 @@ async def schedule_project(project_id: str) -> list[str]:
         for task in ready[:slots]:
             worker_id = f"dispatch-{uuid.uuid4().hex[:10]}"
             if await claim_task(session, task.id, worker_id):
-                dispatched.append(str(task.id))
+                from app.services.queueing import QueueUnavailableError, enqueue
                 from app.worker.tasks import execute_project_task_attempt
 
-                await execute_project_task_attempt.kiq(str(task.id), worker_id)
+                try:
+                    await enqueue(execute_project_task_attempt, str(task.id), worker_id)
+                except QueueUnavailableError:
+                    # Release the claim immediately: the task stays honestly
+                    # READY (no stuck 'assigned' row waiting for the TTL sweep).
+                    claimed = await session.get(ProjectTask, task.id)
+                    if claimed is not None and claimed.status == PMTaskStatus.ASSIGNED:
+                        transition(claimed, PMTaskStatus.READY)
+                        claimed.attempts = max(0, claimed.attempts - 1)  # never ran
+                        await session.commit()
+                    logger.warning(
+                        "dispatch halted; queue unavailable", project_id=project_id
+                    )
+                    break
+                dispatched.append(str(task.id))
     return dispatched
 
 

@@ -121,9 +121,22 @@ async def upload_document(
     )
     await session.commit()
 
+    from app.services.queueing import QueueUnavailableError, enqueue
     from app.worker.tasks import ingest_document_task
 
-    await ingest_document_task.kiq(str(doc.id))
+    try:
+        await enqueue(ingest_document_task, str(doc.id))
+    except QueueUnavailableError:
+        # The file is stored but ingestion could not be scheduled — record an
+        # honest failed state instead of an eternally 'pending' orphan.
+        doc.status = DocumentStatus.FAILED
+        doc.error = (
+            "ingestion queue unavailable — delete this document and re-upload "
+            "once the queue is reachable"
+        )
+        await session.commit()
+        await session.refresh(doc)
+        return DocumentOut.model_validate(doc)
     # In test/inline mode ingestion already ran — return fresh state.
     await session.refresh(doc)
     return DocumentOut.model_validate(doc)

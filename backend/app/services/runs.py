@@ -69,9 +69,12 @@ async def create_run(
 
 
 async def enqueue_run(run_id: uuid.UUID) -> None:
+    """Raises QueueUnavailableError — callers must then mark the run failed
+    (never leave it 'queued' with no worker delivery)."""
+    from app.services.queueing import enqueue
     from app.worker.tasks import execute_run_task
 
-    await execute_run_task.kiq(str(run_id))
+    await enqueue(execute_run_task, str(run_id))
 
 
 async def request_cancel(

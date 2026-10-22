@@ -1,4 +1,4 @@
-"""PM harness endpoints: projects, plans, tasks, PM conversation, events."""
+﻿"""PM harness endpoints: projects, plans, tasks, PM conversation, events."""
 
 import asyncio
 import json
@@ -176,9 +176,12 @@ async def project_lifecycle(
     await session.commit()
     await recorder.publish_pending()
     if target == ProjectStatus.ACTIVE:
+        from app.services.queueing import try_enqueue
         from app.worker.tasks import schedule_project_task
 
-        await schedule_project_task.kiq(str(project.id))
+        # Non-fatal if the queue is down: tasks stay READY and a later
+        # /schedule call or PM "run ready" dispatches them.
+        await try_enqueue(schedule_project_task, str(project.id))
     return ProjectOut.model_validate(project)
 
 
@@ -254,9 +257,12 @@ async def decide_plan(
     await session.commit()
     await recorder.publish_pending()
     if body.approve:
+        from app.services.queueing import try_enqueue
         from app.worker.tasks import schedule_project_task
 
-        await schedule_project_task.kiq(str(project.id))
+        # Non-fatal if the queue is down: tasks stay READY and a later
+        # /schedule call or PM "run ready" dispatches them.
+        await try_enqueue(schedule_project_task, str(project.id))
     return PlanOut.model_validate(plan)
 
 
@@ -387,10 +393,15 @@ async def retry_task(
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     await session.commit()
     await recorder.publish_pending()
+    from app.services.queueing import try_enqueue
     from app.worker.tasks import schedule_project_task
 
-    await schedule_project_task.kiq(str(project.id))
-    return TaskActionResponse(status="ok", message=f"task #{task.ordinal} re-queued")
+    scheduled = await try_enqueue(schedule_project_task, str(project.id))
+    return TaskActionResponse(
+        status="ok",
+        message=f"task #{task.ordinal} re-queued"
+        + ("" if scheduled else " (queue unavailable — dispatch it later via /schedule)"),
+    )
 
 
 @router.post("/{project_id}/tasks/{task_id}/cancel", response_model=TaskActionResponse)
