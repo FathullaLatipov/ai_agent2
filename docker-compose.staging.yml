@@ -1,0 +1,41 @@
+# Isolated staging overlay. ALWAYS use with a dedicated project name so
+# volumes/networks/containers never touch the dev stack or anything else:
+#
+#   docker compose -p agentos-staging \
+#     -f docker-compose.yml -f docker-compose.staging.yml --env-file .env.staging <cmd>
+#
+# NOTE (honest status): authored on a machine without Docker; validate with
+# `config -q` and treat the first `up` as a verification step (docs/deployment.md).
+
+services:
+  postgres:
+    # Internal network only — no host port at all in staging.
+    ports: []
+    restart: unless-stopped
+
+  redis:
+    ports: []
+    restart: unless-stopped
+
+  api:
+    env_file: .env.staging
+    ports:
+      - "127.0.0.1:8800:8000"   # non-conflicting; reverse proxy terminates TLS
+    restart: unless-stopped
+
+  worker:
+    env_file: .env.staging
+    restart: unless-stopped
+    # No HTTP healthcheck (taskiq worker): supervised via restart policy; alert
+    # on missing "run finished"/task-pickup logs (see docs/deployment.md).
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:8800
+    environment:
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8800
+    ports:
+      - "127.0.0.1:3800:3000"
+    restart: unless-stopped

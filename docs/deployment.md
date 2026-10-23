@@ -22,6 +22,43 @@ PostgreSQL 16 + Redis + Next.js). No Kubernetes — nothing here needs it.
   concurrent workers are safe by design (tested). Keep `api` single-instance
   for the pilot (SSE + in-process rate-limit windows are per-instance).
 
+## Isolated staging runbook (first run)
+
+Prerequisites: Docker Engine + Compose v2 on the staging host; free loopback
+ports 8800/3800. **This host audit (2026-10-23)**: 5432, 6379, 8000, 3000 are
+already taken by the native dev stack — the staging overlay avoids all of
+them and publishes **no** PostgreSQL/Redis ports at all. (Host finding, outside
+this repo: the native Windows Redis listens on 0.0.0.0:6379 — firewall it.)
+
+```bash
+cp .env.staging.example .env.staging     # set a strong secret + DB password
+
+# Validate the merged configuration before starting anything:
+docker compose -p agentos-staging -f docker-compose.yml -f docker-compose.staging.yml \
+  --env-file .env.staging config -q
+
+# Start infra, migrate, then the app (dedicated project = dedicated volumes):
+docker compose -p agentos-staging -f docker-compose.yml -f docker-compose.staging.yml \
+  --env-file .env.staging up -d postgres redis
+docker compose -p agentos-staging -f docker-compose.yml -f docker-compose.staging.yml \
+  --env-file .env.staging run --rm api alembic upgrade head
+docker compose -p agentos-staging -f docker-compose.yml -f docker-compose.staging.yml \
+  --env-file .env.staging up -d api worker frontend
+
+# Verify:
+curl -fsS http://127.0.0.1:8800/api/v1/ready        # postgres+redis "ok"
+docker compose -p agentos-staging logs worker | grep -i "recovered\|started"
+# then register a user at http://127.0.0.1:3800, upload a doc, run a project.
+```
+
+Teardown touches only this project: `docker compose -p agentos-staging ... down`
+(add `-v` only if you intend to delete the staging volumes). Never run
+`docker system prune` on a shared host.
+
+> Honest status: these files are validated statically only — Docker is not
+> installed on the authoring machine, so the first `config -q` and `up` on the
+> staging host are themselves verification steps.
+
 ## Configuration & startup validation
 
 All config via `AGENTOS_*` environment variables (`.env.example` is the
@@ -46,7 +83,13 @@ Production checklist:
 alembic upgrade head        # before starting new app code
 # rollback: alembic downgrade -1   (all revisions have tested downgrades)
 ```
-Order for upgrades: stop worker → migrate → start new api+worker. The worker
+Order for upgrades: stop worker → migrate → start new api+worker.
+
+**Application rollback** (release-level): stop api+worker → `git checkout
+<previous commit/tag>` → rebuild images (or `uv sync` locally) → if the bad
+release added migrations, `alembic downgrade <previous head>` → restart.
+Commits are the rollback points; nothing is amended, so every release hash
+stays checkoutable. The worker
 runs a stale-claim recovery sweep at startup, so interrupted attempts are
 re-queued or failed honestly, never silently completed.
 

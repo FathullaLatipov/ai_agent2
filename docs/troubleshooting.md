@@ -13,9 +13,18 @@ this happens in the FastAPI lifespan. If you embed the app elsewhere, call
 `await broker.startup()` before serving.
 
 **Runs stay `queued` forever**
-The worker isn't running or can't reach Redis. Start it with
+The worker isn't running (Redis itself is fine — otherwise submission would have
+failed, see below). Start it with
 `uv run taskiq worker app.worker.broker:broker --workers 1` from `backend/` and watch
 its log for the task pickup line.
+
+**Submission returns 503 "task queue unavailable"**
+Redis was unreachable at submit time. Nothing is silently orphaned: the run is
+recorded as `failed` with the queue error (retry it via the Runs page or
+`POST /runs/{id}/retry` once Redis is back); project tasks stay `READY` with
+their claims released; uploads are marked `failed` with guidance; approval
+decisions remain recorded, and re-running a gated task creates a **fresh**
+approval request. Fix Redis, then retry/schedule.
 
 **`alembic upgrade head` prints "pgvector extension not available"**
 Expected on PostgreSQL installs without pgvector (default Windows installer). The
