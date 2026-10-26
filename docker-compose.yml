@@ -52,6 +52,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - uploads:/srv/backend/var/uploads
+      # Demo fixtures + demo MCP server (seed, mock CRM, scripts/data) live at
+      # the repo root, outside the backend build context — mount read-only.
+      - ./scripts:/srv/scripts:ro
     healthcheck:
       test:
         [
@@ -80,6 +83,7 @@ services:
       AGENTOS_UPLOAD_DIR: /srv/backend/var/uploads
     volumes:
       - uploads:/srv/backend/var/uploads
+      - ./scripts:/srv/scripts:ro
     depends_on:
       postgres:
         condition: service_healthy
