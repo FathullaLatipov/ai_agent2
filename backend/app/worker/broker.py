@@ -19,7 +19,10 @@ if settings.env == "test":
     broker = InMemoryBroker(await_inplace=True)
 else:
     # protocol=2 keeps compatibility with older Redis servers (see core/redis.py).
-    broker = ListQueueBroker(settings.redis_url, protocol=2)
+    # socket_timeout=None: newer redis-py builds default to a 5s read timeout,
+    # which kills the worker's indefinitely-blocking BRPOP every 5 seconds
+    # (reproduced on the pilot VPS). The queue listener must block forever.
+    broker = ListQueueBroker(settings.redis_url, protocol=2, socket_timeout=None)
 
 # Task definitions must be imported so the worker registers them.
 from app.worker import tasks  # noqa: E402, F401
