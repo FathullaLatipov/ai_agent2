@@ -31,12 +31,33 @@ def _pick_column(available: list[str], candidates: tuple[str, ...]) -> str | Non
     return None
 
 
+async def _latest_ready_csv(ctx: AgentContext) -> str | None:
+    """Deterministic auto-detect (mirrors the run planner): the organization's
+    most recently uploaded READY CSV dataset."""
+    from sqlalchemy import select
+
+    from app.models import Document, DocumentStatus
+
+    doc_id = await ctx.session.scalar(
+        select(Document.id)
+        .where(
+            Document.organization_id == ctx.run.organization_id,
+            Document.status == DocumentStatus.READY,
+            Document.content_type == "text/csv",
+        )
+        .order_by(Document.created_at.desc())
+        .limit(1)
+    )
+    return str(doc_id) if doc_id else None
+
+
 async def run_analyst(ctx: AgentContext) -> AnalysisResult:
     params = ctx.task.input
-    dataset_id = params.get("dataset_document_id")
+    dataset_id = params.get("dataset_document_id") or await _latest_ready_csv(ctx)
     if not dataset_id:
         raise TaskFailedError(
-            "analyst task has no dataset_document_id — upload a CSV and reference it"
+            "no dataset available: pass dataset_document_id or upload a ready CSV "
+            "to the knowledge base"
         )
 
     inspect = await ctx.call_tool("dataset.inspect", {"document_id": dataset_id})

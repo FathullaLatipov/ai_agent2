@@ -16,6 +16,49 @@ async def _pm(client: AsyncClient, headers: dict, project_id: str, content: str)
     return resp.json()
 
 
+async def test_pm_sales_project_with_dataset_autodetect(
+    client: AsyncClient, auth_headers: dict, db_session, tmp_path
+):
+    """PM-planned sales project: the deterministic PM draft assigns the analyst
+    without a dataset id, and the analyst auto-detects the org's ready CSV
+    (gap found during the VPS staging smoke)."""
+    import uuid as uuid_mod
+
+    from tests.helpers import seed_csv_document, write_sales_csv
+
+    me = await client.get("/api/v1/auth/me", headers=auth_headers)
+    org_id = me.json()["memberships"][0]["organization"]["id"]
+    csv_path = tmp_path / "sales.csv"
+    write_sales_csv(csv_path)
+    await seed_csv_document(db_session, uuid_mod.UUID(org_id), csv_path)
+    await db_session.commit()
+
+    project = await _create_project(
+        client, auth_headers, "Sales via PM",
+        "Analyze the last 30 days of sales and identify underperforming products",
+    )
+    resp = await client.post(f"/api/v1/projects/{project['id']}/plan", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["tasks_spec"][0]["agent"] == "analyst"
+    resp = await client.post(
+        f"/api/v1/projects/{project['id']}/plans/1/decide",
+        json={"approve": True},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    detail = await _detail(client, auth_headers, project["id"])
+    states = {t["ordinal"]: (t["status"], t["error"]) for t in detail["tasks"]}
+    assert detail["status"] == "completed", states
+    assert all(t["status"] == "succeeded" for t in detail["tasks"]), states
+    analyst = (
+        await client.get(
+            f"/api/v1/projects/{project['id']}/tasks/{_task_by_ordinal(detail, 1)['id']}",
+            headers=auth_headers,
+        )
+    ).json()
+    assert "Underperforming" in analyst["result"]["output"]["summary"]
+
+
 async def test_pm_conversation_commands(client: AsyncClient, auth_headers: dict):
     project = await _create_project(
         client, auth_headers, "Chat ops", "Answer questions about our policies"
