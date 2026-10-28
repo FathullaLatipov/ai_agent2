@@ -184,7 +184,13 @@ export interface SearchHit {
 }
 
 export interface Capabilities {
-  llm: { provider: string; configured: boolean; model: string | null; note: string | null };
+  /** null when the caller is not an admin/owner — provider details are hidden. */
+  llm: {
+    provider: string;
+    configured: boolean;
+    model: string | null;
+    note: string | null;
+  } | null;
   embeddings: { provider: string; semantic: boolean; note: string | null };
   vector_search: { pgvector: boolean; path: string };
   limits: Record<string, number>;

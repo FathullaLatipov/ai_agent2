@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from app.core.config import get_settings
 from app.core.deps import OrgCtx, SessionDep
 from app.db.capabilities import get_capabilities
-from app.models import AgentRun, Document, RunStatus, ToolCall
+from app.models import AgentRun, Document, MemberRole, RunStatus, ToolCall
 
 router = APIRouter(prefix="/meta", tags=["meta"])
 
@@ -79,9 +79,12 @@ async def overview(session: SessionDep, ctx: OrgCtx) -> dict:
 
 
 @router.get("/capabilities")
-async def capabilities(_ctx: OrgCtx) -> dict:
+async def capabilities(ctx: OrgCtx) -> dict:
     settings = get_settings()
     caps = get_capabilities()
+    # Provider configuration is operational detail for admins/owners only;
+    # regular members and viewers get llm=null.
+    is_admin = ctx.role in (MemberRole.ADMIN, MemberRole.OWNER)
     return {
         "llm": {
             "provider": settings.llm_provider,
@@ -90,7 +93,9 @@ async def capabilities(_ctx: OrgCtx) -> dict:
             "note": None
             if settings.llm_configured
             else "No LLM credentials configured — agents run in deterministic mode.",
-        },
+        }
+        if is_admin
+        else None,
         "embeddings": {
             "provider": settings.embeddings_provider,
             "semantic": settings.embeddings_provider in ("voyage", "openai"),

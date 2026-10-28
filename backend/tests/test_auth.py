@@ -74,3 +74,44 @@ async def test_capabilities_requires_auth_and_reports_honestly(
     assert body["embeddings"]["provider"] == "local-hash"
     assert body["embeddings"]["semantic"] is False
     assert "pgvector" in body["vector_search"]
+
+
+async def test_capabilities_llm_hidden_from_non_admins(
+    client: AsyncClient, auth_headers: dict, db_session
+):
+    """Provider configuration is admin-only; members get llm=null."""
+    import uuid as uuid_mod
+
+    from app.core.security import create_access_token, hash_password
+    from app.models import MemberRole, OrganizationMember, User
+
+    me = await client.get("/api/v1/auth/me", headers=auth_headers)
+    org_id = uuid_mod.UUID(me.json()["memberships"][0]["organization"]["id"])
+
+    member = User(
+        email="bob@example.com",
+        password_hash=hash_password("another-strong-pass"),
+        full_name="Bob Member",
+    )
+    db_session.add(member)
+    await db_session.flush()
+    db_session.add(
+        OrganizationMember(
+            organization_id=org_id, user_id=member.id, role=MemberRole.MEMBER
+        )
+    )
+    await db_session.commit()
+
+    resp = await client.get(
+        "/api/v1/meta/capabilities",
+        headers={"Authorization": f"Bearer {create_access_token(member.id)}"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["llm"] is None
+    # Non-secret sections remain visible.
+    assert body["embeddings"]["provider"] == "local-hash"
+    assert "limits" in body
+
+    owner = (await client.get("/api/v1/meta/capabilities", headers=auth_headers)).json()
+    assert owner["llm"] is not None

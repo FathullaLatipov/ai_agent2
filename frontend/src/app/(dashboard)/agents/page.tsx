@@ -37,9 +37,14 @@ export default function AgentsPage() {
     queryFn: () => api<Capabilities>("/meta/capabilities"),
   });
 
-  const modelLabel = capabilities.data?.llm.configured
-    ? capabilities.data.llm.model
-    : "deterministic (no LLM configured)";
+  // llm is null for non-admins — show a neutral label instead of provider details.
+  const modelLabel = !capabilities.data
+    ? "…"
+    : capabilities.data.llm == null
+      ? "managed by workspace admin"
+      : capabilities.data.llm.configured
+        ? capabilities.data.llm.model
+        : "deterministic (no LLM configured)";
 
   return (
     <div>

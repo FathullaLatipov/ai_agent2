@@ -37,21 +37,24 @@ export default function SettingsPage() {
           </dl>
         </Section>
 
-        <Section title="AI provider">
-          <div className="space-y-2.5 text-sm">
-            <StatusLine
-              ok={caps.llm.configured}
-              okText={`${caps.llm.provider} · ${caps.llm.model}`}
-              failText="Not configured — runs execute in deterministic mode"
-            />
-            {caps.llm.note && <Note text={caps.llm.note} />}
-            <p className="text-xs text-muted-foreground">
-              Configure via <code className="font-mono">AGENTOS_LLM_PROVIDER</code> /{" "}
-              <code className="font-mono">AGENTOS_ANTHROPIC_API_KEY</code> in the server
-              environment. Keys are never stored in the database or shown here.
-            </p>
-          </div>
-        </Section>
+        {caps.llm && (
+          <Section title="AI provider">
+            <div className="space-y-2.5 text-sm">
+              <StatusLine
+                ok={caps.llm.configured}
+                okText={`${caps.llm.provider} · ${caps.llm.model}`}
+                failText="Not configured — runs execute in deterministic mode"
+              />
+              {caps.llm.note && <Note text={caps.llm.note} />}
+              <p className="text-xs text-muted-foreground">
+                Visible to admins and owners only. Configure via{" "}
+                <code className="font-mono">AGENTOS_LLM_PROVIDER</code> /{" "}
+                <code className="font-mono">AGENTOS_ANTHROPIC_API_KEY</code> in the server
+                environment. Keys are never stored in the database or shown here.
+              </p>
+            </div>
+          </Section>
+        )}
 
         <Section title="Embeddings & retrieval">
           <div className="space-y-2.5 text-sm">
