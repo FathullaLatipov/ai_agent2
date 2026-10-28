@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { CornerDownLeft, Database, Loader2, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CornerDownLeft, Database, FileUp, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { DocumentInfo, RunSummary } from "@/lib/types";
@@ -18,17 +18,73 @@ const EXAMPLES = [
 ];
 
 export default function WorkspacePage() {
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [datasetId, setDatasetId] = useState<string>("");
+  const [pendingDatasetId, setPendingDatasetId] = useState<string>("");
+  const [dragging, setDragging] = useState(false);
 
   const documents = useQuery({
     queryKey: ["documents"],
     queryFn: () => api<DocumentInfo[]>("/documents"),
+    refetchInterval: (q) =>
+      q.state.data?.some((d) => d.status === "pending" || d.status === "processing")
+        ? 2000
+        : false,
   });
   const readyCsvs = (documents.data ?? []).filter(
     (d) => d.status === "ready" && d.filename.toLowerCase().endsWith(".csv"),
   );
+
+  // Poll a just-uploaded CSV until ingestion finishes, then select it as the dataset.
+  const watchDataset = async (id: string) => {
+    setPendingDatasetId(id);
+    try {
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const doc = await api<DocumentInfo>(`/documents/${id}`);
+        if (doc.status === "ready") {
+          setDatasetId(doc.id);
+          toast.success(`Dataset ready: ${doc.filename}`);
+          void queryClient.invalidateQueries({ queryKey: ["documents"] });
+          return;
+        }
+        if (doc.status === "failed") {
+          toast.error(`Ingestion failed: ${doc.error ?? doc.filename}`);
+          return;
+        }
+      }
+      toast.error("Dataset is still processing — check the Knowledge Base page.");
+    } finally {
+      setPendingDatasetId("");
+    }
+  };
+
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return api<DocumentInfo>("/documents", { method: "POST", body: form });
+    },
+    onSuccess: (doc) => {
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      if (doc.status === "failed") {
+        toast.error(`Upload stored but ingestion failed: ${doc.error}`);
+      } else if (doc.filename.toLowerCase().endsWith(".csv")) {
+        toast.success(`Uploaded ${doc.filename} — processing dataset…`);
+        if (doc.status === "ready") {
+          setDatasetId(doc.id);
+        } else {
+          void watchDataset(doc.id);
+        }
+      } else {
+        toast.success(`Uploaded ${doc.filename} — added to the knowledge base`);
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const submit = useMutation({
     mutationFn: () =>
@@ -56,10 +112,34 @@ export default function WorkspacePage() {
       />
 
       {/* Task composer */}
-      <section className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-          <Sparkles className="size-4 text-[#635BFF]" aria-hidden />
-          <p className="text-sm font-semibold">New task</p>
+      <section
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) upload.mutate(file);
+        }}
+        className={
+          dragging
+            ? "rounded-xl border border-[#635BFF] bg-[#FAFAFF] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+            : "rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+        }
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-[#635BFF]" aria-hidden />
+            <p className="text-sm font-semibold">New task</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {dragging
+              ? "Drop to upload"
+              : "Drop a file anywhere on this card to add your data"}
+          </p>
         </div>
         <textarea
           value={input}
@@ -98,11 +178,37 @@ export default function WorkspacePage() {
                 ))}
               </SelectContent>
             </Select>
-            {readyCsvs.length === 0 && !documents.isLoading && (
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                No CSV datasets yet — upload one in the Knowledge Base.
-              </p>
-            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,.txt,.md,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) upload.mutate(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={upload.isPending || Boolean(pendingDatasetId)}
+            >
+              {upload.isPending || pendingDatasetId ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <FileUp className="size-4" aria-hidden />
+              )}
+              {upload.isPending
+                ? "Uploading…"
+                : pendingDatasetId
+                  ? "Processing…"
+                  : "Upload data"}
+            </Button>
+            <p className="hidden text-xs text-muted-foreground lg:block">
+              .csv → dataset · .txt .md .pdf → knowledge base
+            </p>
           </div>
           <Button onClick={() => submit.mutate()} disabled={!canSubmit}>
             {submit.isPending ? (
