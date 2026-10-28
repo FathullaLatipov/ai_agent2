@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Users,
   Wrench,
   X,
 } from "lucide-react";
@@ -53,7 +54,10 @@ const NAV_GROUPS = [
   },
   {
     label: "System",
-    items: [{ href: "/settings", label: "Settings", icon: Settings }],
+    items: [
+      { href: "/members", label: "Members", icon: Users, adminOnly: true },
+      { href: "/settings", label: "Settings", icon: Settings },
+    ],
   },
 ] as const;
 
@@ -66,6 +70,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/agents": "Agents",
   "/tools": "Tools & MCP",
   "/knowledge": "Knowledge Base",
+  "/members": "Members",
   "/settings": "Settings",
 };
 
@@ -102,6 +107,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pendingCount = pendingApprovals.data?.length ?? 0;
 
   const signedOut = mounted && !token;
+  const role = me?.memberships[0]?.role;
+  const isAdmin = role === "owner" || role === "admin";
 
   const nav = (
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Main">
@@ -111,7 +118,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {group.label}
           </p>
           <div className="space-y-0.5">
-            {group.items.map(({ href, label, icon: Icon }) => {
+            {group.items
+              .filter((item) => isAdmin || !("adminOnly" in item && item.adminOnly))
+              .map(({ href, label, icon: Icon }) => {
               const active = pathname.startsWith(href);
               return (
                 <Link

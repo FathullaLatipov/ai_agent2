@@ -1,8 +1,18 @@
-"""Users, organizations, memberships, projects."""
+"""Users, organizations, memberships, invites, projects."""
 
+import datetime as dt
 import uuid
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -56,6 +66,48 @@ class OrganizationMember(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     organization: Mapped[Organization] = relationship(back_populates="members")
     user: Mapped[User] = relationship(back_populates="memberships")
+
+
+class OrganizationInvite(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """One-time invite link to join an organization with a fixed role.
+
+    Only the SHA-256 of the token is stored; the raw token is returned once
+    at creation and travels in the join link.
+    """
+
+    __tablename__ = "organization_invites"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_org_invite_token"),
+        Index("ix_org_invites_org", "organization_id"),
+    )
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    role: Mapped[MemberRole] = mapped_column(
+        Enum(
+            MemberRole,
+            native_enum=False,
+            length=20,
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        nullable=False,
+        default=MemberRole.MEMBER,
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    invited_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    accepted_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    organization: Mapped[Organization] = relationship()
 
 
 class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):

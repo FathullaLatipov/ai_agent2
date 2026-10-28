@@ -122,6 +122,7 @@ def create_app() -> FastAPI:
         auth,
         documents,
         health,
+        members,
         meta,
         projects,
         runs,
@@ -137,6 +138,7 @@ def create_app() -> FastAPI:
     app.include_router(tools.router, prefix="/api/v1")
     app.include_router(documents.router, prefix="/api/v1")
     app.include_router(projects.router, prefix="/api/v1")
+    app.include_router(members.router, prefix="/api/v1")
 
     return app
 

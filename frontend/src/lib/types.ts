@@ -197,6 +197,38 @@ export interface Capabilities {
   environment: string;
 }
 
+// ---------- team management ----------
+
+export interface MemberInfo {
+  id: string; // membership id
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: "owner" | "admin" | "member" | "viewer";
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface InviteInfo {
+  id: string;
+  email: string;
+  role: "admin" | "member" | "viewer";
+  expires_at: string;
+  created_at: string;
+}
+
+export interface InviteCreated extends InviteInfo {
+  token: string; // raw token — shown exactly once
+}
+
+export interface InvitePublic {
+  organization_name: string;
+  email: string;
+  role: string;
+  valid: boolean;
+  reason: string | null;
+}
+
 // ---------- PM harness ----------
 
 export type PMTaskStatus =

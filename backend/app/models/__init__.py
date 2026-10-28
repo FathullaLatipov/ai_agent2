@@ -13,7 +13,13 @@ from app.models.enums import (
     TaskStatus,
     ToolCallStatus,
 )
-from app.models.orgs import Organization, OrganizationMember, Project, User
+from app.models.orgs import (
+    Organization,
+    OrganizationInvite,
+    OrganizationMember,
+    Project,
+    User,
+)
 from app.models.pm import (
     ACTIVE_TASK_STATUSES,
     TERMINAL_TASK_STATUSES,
@@ -57,6 +63,7 @@ __all__ = [
     "ExecutionMode",
     "MemberRole",
     "Organization",
+    "OrganizationInvite",
     "OrganizationMember",
     "PMTaskStatus",
     "PlanStatus",
