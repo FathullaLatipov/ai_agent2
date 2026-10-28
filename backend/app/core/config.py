@@ -64,6 +64,14 @@ class Settings(BaseSettings):
     rate_limit_auth_per_minute: int = 10
     rate_limit_default_per_minute: int = 120
 
+    # Platform operators (comma-separated emails). Set only in the server
+    # environment — grants visibility into provider configuration, nothing else.
+    superadmin_emails: str = ""
+
+    def is_superadmin(self, email: str) -> bool:
+        allowed = {e.strip().lower() for e in self.superadmin_emails.split(",") if e.strip()}
+        return email.lower() in allowed
+
     @property
     def effective_database_url(self) -> str:
         return self.test_database_url if self.env == "test" else self.database_url

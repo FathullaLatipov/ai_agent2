@@ -41,7 +41,7 @@ export default function AgentsPage() {
   const modelLabel = !capabilities.data
     ? "…"
     : capabilities.data.llm == null
-      ? "managed by workspace admin"
+      ? "managed by the platform"
       : capabilities.data.llm.configured
         ? capabilities.data.llm.model
         : "deterministic (no LLM configured)";

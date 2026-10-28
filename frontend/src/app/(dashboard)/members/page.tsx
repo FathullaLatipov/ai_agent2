@@ -181,8 +181,8 @@ export default function MembersPage() {
             {invite.isPending ? "Creating…" : "Create invite link"}
           </Button>
           <p className="w-full text-xs text-muted-foreground">
-            Admin — manages the team and sees provider settings · Member — runs projects
-            and uploads data · Viewer — read-only.
+            Admin — manages the team · Member — runs projects and uploads data · Viewer —
+            read-only.
           </p>
         </form>
       </section>

@@ -47,7 +47,7 @@ export default function SettingsPage() {
               />
               {caps.llm.note && <Note text={caps.llm.note} />}
               <p className="text-xs text-muted-foreground">
-                Visible to admins and owners only. Configure via{" "}
+                Visible to platform superadmins only. Configure via{" "}
                 <code className="font-mono">AGENTOS_LLM_PROVIDER</code> /{" "}
                 <code className="font-mono">AGENTOS_ANTHROPIC_API_KEY</code> in the server
                 environment. Keys are never stored in the database or shown here.
