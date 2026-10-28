@@ -12,6 +12,7 @@ All seeded content is synthetic and labeled as demo data.
 
 import asyncio
 import hashlib
+import os
 import shutil
 import sys
 import uuid
@@ -37,9 +38,12 @@ from app.models import (
 from app.rag.ingestion import ingest_document
 from app.services.agents_sync import sync_system_agents
 
-DEMO_EMAIL = "demo@example.com"
-DEMO_PASSWORD = "agentos-demo-123"  # noqa: S105 вЂ” demo credentials, printed to operator
-DEMO_ORG_SLUG = "demo-workspace"
+# Overridable so operators can seed a public demo workspace with their own
+# credentials: SEED_EMAIL / SEED_PASSWORD / SEED_ORG_NAME / SEED_ORG_SLUG.
+DEMO_EMAIL = os.environ.get("SEED_EMAIL", "demo@example.com")
+DEMO_PASSWORD = os.environ.get("SEED_PASSWORD", "agentos-demo-123")
+DEMO_ORG_NAME = os.environ.get("SEED_ORG_NAME", "Demo Workspace")
+DEMO_ORG_SLUG = os.environ.get("SEED_ORG_SLUG", "demo-workspace")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "scripts" / "data"
@@ -62,7 +66,7 @@ async def seed() -> None:
             select(Organization).where(Organization.slug == DEMO_ORG_SLUG)
         )
         if org is None:
-            org = Organization(name="Demo Workspace", slug=DEMO_ORG_SLUG)
+            org = Organization(name=DEMO_ORG_NAME, slug=DEMO_ORG_SLUG)
             session.add(org)
             await session.flush()
             print(f"created organization: {org.name}")

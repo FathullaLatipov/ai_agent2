@@ -134,6 +134,9 @@ export default function LoginPage() {
             </p>
           )}
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Try the demo workspace: demo@agent-os.uz · agentos-demo-2026
+        </p>
       </div>
     </main>
   );
