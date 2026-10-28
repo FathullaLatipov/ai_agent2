@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -240,7 +241,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel>
+                {/* GroupLabel must live inside a Group (Base UI requirement). */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
                   <p className="truncate text-sm font-medium">
                     {mounted && me ? me.user.full_name : "Account"}
                   </p>
@@ -249,7 +252,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       ? `${me.memberships[0]?.organization.name} · ${me.memberships[0]?.role}`
                       : ""}
                   </p>
-                </DropdownMenuLabel>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/settings")}>
                   <Settings className="size-4" aria-hidden /> Settings
