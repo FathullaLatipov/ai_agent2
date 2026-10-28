@@ -282,6 +282,10 @@ def build_graph(env: ExecutionEnv):
                     allowed_tools=allowed,
                     prior_outputs=completed,
                 )
+                # Rollback in the error paths expires ORM instances; touching
+                # task.id afterwards lazy-loads synchronously and raises
+                # MissingGreenlet, masking the real error. Capture it now.
+                task_id = task.id
                 try:
                     async with asyncio.timeout(env.settings.task_timeout_s):
                         output = await runner(ctx)
@@ -303,7 +307,7 @@ def build_graph(env: ExecutionEnv):
                     await session.rollback()
                     # Rollback expires loaded objects — re-fetch before touching them.
                     run = await _load_run(session, state["run_id"])
-                    task = await session.get(RunTask, task.id)
+                    task = await session.get(RunTask, task_id)
                     if task.attempts < task.max_attempts:
                         await _emit(
                             env, session, run, "task.retrying",
@@ -324,7 +328,7 @@ def build_graph(env: ExecutionEnv):
                 ) as exc:
                     await session.rollback()
                     run = await _load_run(session, state["run_id"])
-                    task = await session.get(RunTask, task.id)
+                    task = await session.get(RunTask, task_id)
                     await _fail_task(env, session, run, task, str(exc))
                     return {}
 

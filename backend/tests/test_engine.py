@@ -192,6 +192,30 @@ async def test_approval_requires_admin_role(db_session):
         )
 
 
+async def test_llm_error_surfaces_real_message_not_engine_crash(
+    client: AsyncClient, auth_headers: dict, monkeypatch
+):
+    """An LLMError must fail the task with its own message. Regression: the
+    error path touched expired ORM attributes after rollback (MissingGreenlet)
+    and every LLM failure surfaced as 'internal engine error'."""
+    from app.engine import graph as graph_module
+    from app.llm.base import LLMError
+
+    async def broke_llm(ctx):
+        # A real agent dirties ORM state before the LLM call fails (events,
+        # token counters); the rollback then expires these objects.
+        ctx.task.output = {"partial": "state before the failure"}
+        raise LLMError("anthropic API error: 400")
+
+    monkeypatch.setitem(graph_module.AGENT_RUNNERS, "research", broke_llm)
+    run = await _submit(client, auth_headers, "What is our vacation policy?")
+    detail = await _detail(client, auth_headers, run["id"])
+    assert detail["status"] == "failed"
+    assert detail["tasks"][0]["status"] == "failed"
+    assert detail["tasks"][0]["error"] == "anthropic API error: 400"
+    assert detail["error"] != "internal engine error"
+
+
 async def test_task_retry_on_transient_error(
     client: AsyncClient, auth_headers: dict, monkeypatch
 ):
