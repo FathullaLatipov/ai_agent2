@@ -68,6 +68,38 @@ async def test_llm_plan_accepted_when_valid(fake_llm):
     assert "produces:" in fake_llm.calls[0]["system"]
 
 
+async def test_blank_output_field_criterion_downgraded(fake_llm):
+    """Regression: a live LLM drafted an output_field criterion with an empty
+    field name — it can never pass and failed the task 3 times. Validation now
+    downgrades it to run_succeeded while keeping the human-readable text."""
+    fake_llm.enqueue(
+        _plan(
+            [
+                _task(
+                    "t1",
+                    "research",
+                    acceptance_criteria=[
+                        {
+                            "description": "A criterion with a blank field name",
+                            "kind": "output_field",
+                            "config": {"field": "  "},
+                        },
+                        {
+                            "description": "A usable field check",
+                            "kind": "output_field",
+                            "config": {"field": "summary"},
+                        },
+                    ],
+                )
+            ]
+        )
+    )
+    draft = await generate_validated_plan("research something", fake_llm)
+    kinds = [c.kind for c in draft.tasks[0].acceptance_criteria]
+    assert kinds == ["run_succeeded", "output_field"]
+    assert draft.tasks[0].acceptance_criteria[0].config == {}
+
+
 async def test_malformed_output_falls_back_deterministic_with_annotation(fake_llm):
     fake_llm.enqueue({"garbage": True})  # fails PlanDraft schema → LLMError
     draft = await generate_validated_plan("What is our refund policy?", fake_llm)

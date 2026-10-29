@@ -4,7 +4,7 @@ import datetime as dt
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.pm import PlanStatus, PMTaskStatus
 
@@ -17,6 +17,18 @@ class AcceptanceCriterion(BaseModel):
         "artifact_exists"
     )
     config: dict = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _normalize_unusable_config(self) -> "AcceptanceCriterion":
+        # An output_field criterion without a usable field name can never pass
+        # (LLM drafts sometimes emit one). Downgrade it so the description is
+        # kept for humans but the check is evaluable.
+        if self.kind == "output_field":
+            field = self.config.get("field")
+            if not isinstance(field, str) or not field.strip():
+                self.kind = "run_succeeded"
+                self.config = {}
+        return self
 
 
 class TaskSpec(BaseModel):
