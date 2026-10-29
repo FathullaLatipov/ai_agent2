@@ -16,6 +16,12 @@ from app.llm.base import LLMError, LLMTransientError, LLMUsage, TModel
 
 logger = get_logger("agentos.llm")
 
+# Callers pass budgets tuned for short English outputs; on current models the
+# (adaptive) thinking tokens count against max_tokens too, and multilingual
+# JSON is longer — a low ceiling truncates mid-string and the parse fails.
+# max_tokens is a ceiling, not a spend: only generated tokens are billed.
+MIN_STRUCTURED_MAX_TOKENS = 8192
+
 
 class AnthropicProvider:
     name = "anthropic"
@@ -46,7 +52,7 @@ class AnthropicProvider:
         try:
             response = await self._client.messages.parse(
                 model=self._model,
-                max_tokens=max_tokens,
+                max_tokens=max(max_tokens, MIN_STRUCTURED_MAX_TOKENS),
                 system=system,
                 messages=[{"role": "user", "content": user}],
                 output_format=schema,
@@ -67,6 +73,11 @@ class AnthropicProvider:
         except ValidationError as exc:
             raise LLMError(f"model output failed schema validation: {exc}") from exc
 
+        if getattr(response, "stop_reason", None) == "max_tokens":
+            raise LLMError(
+                "model output truncated by the max_tokens limit before the "
+                "structured result was complete"
+            )
         parsed = response.parsed_output
         if parsed is None:
             raise LLMError("model did not return the requested structured output")
