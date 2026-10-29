@@ -1,11 +1,11 @@
 """Anthropic provider.
 
-Structured output is obtained by forcing a single tool call whose input schema is
-the target Pydantic model's JSON schema — the most reliable way to get valid JSON.
+Structured output uses the Messages API structured-outputs feature via the SDK's
+`messages.parse` (output_format = the target Pydantic model). Forced tool choice
+(`tool_choice: {"type": "tool"}`) is rejected with a 400 on current models
+(claude-sonnet-5-5 and newer) and must not be reintroduced here.
 
-HONEST STATUS: implemented against the anthropic SDK 2.0 contract and covered by
-fake-provider tests; live API connectivity is unverified until credentials are
-configured (see README §Limitations). Opt-in live test: pytest -m live_llm.
+Opt-in live test: pytest -m live_llm (requires AGENTOS_ANTHROPIC_API_KEY).
 """
 
 from pydantic import ValidationError
@@ -43,50 +43,37 @@ class AnthropicProvider:
     ) -> tuple[TModel, LLMUsage]:
         import anthropic
 
-        tool_name = "emit_result"
         try:
-            raw = await self._client.messages.with_raw_response.create(
+            response = await self._client.messages.parse(
                 model=self._model,
                 max_tokens=max_tokens,
                 system=system,
                 messages=[{"role": "user", "content": user}],
-                tools=[
-                    {
-                        "name": tool_name,
-                        "description": "Emit the final structured result.",
-                        "input_schema": schema.model_json_schema(),
-                    }
-                ],
-                tool_choice={"type": "tool", "name": tool_name},
+                output_format=schema,
             )
         except anthropic.RateLimitError as exc:
             raise LLMTransientError(f"anthropic rate limit: {exc}") from exc
         except anthropic.APIStatusError as exc:
             if exc.status_code >= 500:
                 raise LLMTransientError(f"anthropic server error: {exc.status_code}") from exc
-            raise LLMError(f"anthropic API error: {exc.status_code}") from exc
+            detail = ""
+            try:
+                detail = f" — {exc.body['error']['message'][:200]}"
+            except (TypeError, KeyError):
+                pass
+            raise LLMError(f"anthropic API error: {exc.status_code}{detail}") from exc
         except anthropic.APIConnectionError as exc:
             raise LLMTransientError(f"anthropic connection error: {exc}") from exc
-
-        request_id = raw.headers.get("request-id")
-        response = raw.parse()
-
-        tool_input = None
-        for block in response.content:
-            if getattr(block, "type", None) == "tool_use" and block.name == tool_name:
-                tool_input = block.input
-                break
-        if tool_input is None:
-            raise LLMError("model did not return the requested structured output")
-
-        try:
-            parsed = schema.model_validate(tool_input)
         except ValidationError as exc:
             raise LLMError(f"model output failed schema validation: {exc}") from exc
+
+        parsed = response.parsed_output
+        if parsed is None:
+            raise LLMError("model did not return the requested structured output")
 
         usage = LLMUsage(
             input_tokens=getattr(response.usage, "input_tokens", None),
             output_tokens=getattr(response.usage, "output_tokens", None),
-            request_id=request_id,
+            request_id=getattr(response, "_request_id", None),
         )
         return parsed, usage
