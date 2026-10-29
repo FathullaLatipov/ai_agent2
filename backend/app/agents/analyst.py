@@ -4,6 +4,8 @@ The LLM (when configured) only writes the narrative around numbers that were
 computed by tools; it never produces numbers itself.
 """
 
+import re
+
 from app.engine.context import AgentContext
 from app.engine.errors import TaskFailedError
 from app.llm.base import wrap_untrusted
@@ -28,6 +30,21 @@ Write in the same language as the task goal when one is given."""
 
 _GROUP_CANDIDATES = ("product", "product_name", "item", "sku", "category", "name")
 _VALUE_CANDIDATES = ("revenue", "total", "amount", "sales", "value", "price")
+
+# "за последние 30 дней", "last 30 days", "30 дней", "30 days", "30 суток"
+_LAST_DAYS_RE = re.compile(r"(\d{1,4})\s*(?:дн\w*|day\w*|сут\w*)", re.IGNORECASE)
+
+
+def _infer_last_days(text: str | None) -> int | None:
+    """Deterministic fallback when the plan did not pass last_days explicitly:
+    read the analysis window straight from the task wording (ru/en)."""
+    if not text:
+        return None
+    match = _LAST_DAYS_RE.search(text)
+    if not match:
+        return None
+    days = int(match.group(1))
+    return days if 0 < days <= 3660 else None
 
 
 def _pick_column(available: list[str], candidates: tuple[str, ...]) -> str | None:
@@ -97,7 +114,7 @@ async def run_analyst(ctx: AgentContext) -> AnalysisResult:
         "sort": "desc",
         "limit": 100,
     }
-    last_days = params.get("last_days")
+    last_days = params.get("last_days") or _infer_last_days(ctx.run.input_text)
     if last_days and date_col:
         agg_args.update({"date_column": date_col, "last_days": int(last_days)})
     aggregate = await ctx.call_tool("dataset.aggregate", agg_args)
