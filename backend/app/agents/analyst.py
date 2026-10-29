@@ -13,7 +13,18 @@ ANALYST_SYSTEM = """You are the narrative writer for a data analysis.
 You are given metrics that were computed deterministically by tools.
 Write summary/method/limitations text around them. Do not compute new numbers,
 do not alter values, do not speculate beyond the data. The metrics/tables you
-output will be replaced by the platform's computed values."""
+output will be replaced by the platform's computed values.
+
+A reviewer will check your text for rigor, so preserve every methodological
+fact from the input — never drop or vague them:
+- state the exact analysis window/period; if the aggregation covered the full
+  dataset rather than a requested window, say so explicitly in summary AND
+  limitations;
+- restate the underperformer threshold and exactly how it is derived (50% of
+  the mean share across groups), with the numeric value;
+- name the data sources: the computed_by tool calls and the dataset the
+  metrics came from.
+Write in the same language as the task goal when one is given."""
 
 _GROUP_CANDIDATES = ("product", "product_name", "item", "sku", "category", "name")
 _VALUE_CANDIDATES = ("revenue", "total", "amount", "sales", "value", "price")
@@ -168,7 +179,11 @@ async def run_analyst(ctx: AgentContext) -> AnalysisResult:
     if not ctx.deterministic:
         narrative = await ctx.llm_structured(
             system=ANALYST_SYSTEM,
-            user=wrap_untrusted("computed_analysis", result.model_dump_json()),
+            user=(
+                wrap_untrusted("task_goal", ctx.run.input_text)
+                + "\n"
+                + wrap_untrusted("computed_analysis", result.model_dump_json())
+            ),
             schema=AnalysisResult,
             max_tokens=1500,
         )
