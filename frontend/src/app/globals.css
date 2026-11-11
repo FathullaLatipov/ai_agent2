@@ -49,14 +49,15 @@
 }
 
 /*
- * AgentOS design tokens — premium light SaaS.
- * App background #F7F8FA · surfaces #FFFFFF / #F1F3F6 · ink #171923 / #687080
- * borders #E5E7EB · primary accent #635BFF · secondary accent #3B82F6.
- * Status colors (emerald/amber/red/blue) are applied per-component and always
- * paired with an icon + label — color never carries state alone.
+ * AgentOS design tokens — warm-paper fintech look (client reference).
+ * Canvas #F3F1EC (warm paper) · floating white cards · ink #171923 / #687080
+ * warm borders #E6E3DA · primary accent #635BFF (brand, used sparingly:
+ * one hero tile, selection, links). Status colors (emerald/amber/red/blue)
+ * are applied per-component and always paired with an icon + label —
+ * color never carries state alone.
  */
 :root {
-  --background: #f7f8fa;
+  --background: #f3f1ec;
   --foreground: #171923;
   --card: #ffffff;
   --card-foreground: #171923;
@@ -64,29 +65,29 @@
   --popover-foreground: #171923;
   --primary: #635bff;
   --primary-foreground: #ffffff;
-  --secondary: #f1f3f6;
+  --secondary: #f2f0ea;
   --secondary-foreground: #171923;
-  --muted: #f1f3f6;
+  --muted: #f2f0ea;
   --muted-foreground: #687080;
-  --accent: #f1f3f6;
+  --accent: #f2f0ea;
   --accent-foreground: #171923;
   --destructive: #d92d20;
-  --border: #e5e7eb;
-  --input: #e0e3e8;
+  --border: #e6e3da;
+  --input: #ddd9ce;
   --ring: #635bff;
   --chart-1: #635bff;
   --chart-2: #3b82f6;
   --chart-3: #0ea5e9;
   --chart-4: #8b5cf6;
   --chart-5: #687080;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #171923;
   --sidebar-primary: #635bff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f3f6;
+  --sidebar-accent: #f2f0ea;
   --sidebar-accent-foreground: #171923;
-  --sidebar-border: #e5e7eb;
+  --sidebar-border: #e6e3da;
   --sidebar-ring: #635bff;
 }
 
@@ -107,6 +108,6 @@
   /* Recessive scrollbars that fit the light surfaces. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #d3d7de transparent;
+    scrollbar-color: #d4d0c5 transparent;
   }
 }

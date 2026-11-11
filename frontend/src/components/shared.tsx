@@ -164,20 +164,56 @@ export function StatTile({
   value,
   hint,
   icon: Icon,
+  tone = "default",
 }: {
   label: string;
   value: string | number;
   hint?: string;
   icon?: React.ElementType;
+  /** "accent" renders the one filled hero tile — use it at most once per row. */
+  tone?: "default" | "accent";
 }) {
+  const accent = tone === "accent";
   return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+    <div
+      className={cn(
+        "rounded-xl px-4 py-4",
+        accent
+          ? "border border-transparent bg-primary text-primary-foreground shadow-[0_10px_24px_-10px_rgba(99,91,255,0.55)]"
+          : "border border-border bg-card shadow-[0_1px_2px_rgba(23,25,35,0.04)]",
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
-        {Icon && <Icon className="size-4 text-muted-foreground/70" aria-hidden />}
+        <p
+          className={cn(
+            "text-[13px] font-medium",
+            accent ? "text-white/80" : "text-muted-foreground",
+          )}
+        >
+          {label}
+        </p>
+        {Icon && (
+          <span
+            className={cn(
+              "flex size-7 shrink-0 items-center justify-center rounded-full",
+              accent ? "bg-white/15" : "bg-secondary",
+            )}
+          >
+            <Icon
+              className={cn("size-3.5", accent ? "text-white" : "text-muted-foreground")}
+              aria-hidden
+            />
+          </span>
+        )}
       </div>
-      <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+      <p className="mt-2 text-[28px] font-semibold leading-none tracking-tight tabular-nums">
+        {value}
+      </p>
+      {hint && (
+        <p className={cn("mt-1.5 text-xs", accent ? "text-white/75" : "text-muted-foreground")}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

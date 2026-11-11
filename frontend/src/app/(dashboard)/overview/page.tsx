@@ -1,16 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Activity,
   ArrowUpRight,
+  BookOpen,
   CheckCircle2,
+  CheckSquare,
+  FolderKanban,
   ListTodo,
   Plus,
+  ScrollText,
   Timer,
   Wrench,
+  X,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,6 +32,47 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+
+const GUIDE_KEY = "agentos-guide-dismissed";
+
+const GUIDE_STEPS = [
+  {
+    title: "Add your data",
+    text: "Upload a CSV or company documents in the Knowledge Base — or drop a file straight onto the task card in the Agent Workspace.",
+    href: "/knowledge",
+    icon: BookOpen,
+    cta: "Open Knowledge Base",
+  },
+  {
+    title: "Describe the goal",
+    text: "Create a project in your own words. The project manager agent drafts a step-by-step plan and picks the right agents for each task.",
+    href: "/projects",
+    icon: FolderKanban,
+    cta: "Create a project",
+  },
+  {
+    title: "Approve and watch",
+    text: "Nothing runs until you approve the plan. Risky external actions (like sending a message) pause and wait for your decision in Approvals.",
+    href: "/approvals",
+    icon: CheckSquare,
+    cta: "Review approvals",
+  },
+  {
+    title: "Get the verified report",
+    text: "A reviewer agent checks every result before it reaches you. Follow execution live and read the final report in Runs.",
+    href: "/runs",
+    icon: ScrollText,
+    cta: "See your runs",
+  },
+] as const;
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 const TEMPLATES = [
   {
@@ -46,6 +93,21 @@ const TEMPLATES = [
 export default function OverviewPage() {
   const router = useRouter();
   const me = useAuth((s) => s.me);
+  const [guideHidden, setGuideHidden] = useState(() => {
+    try {
+      return localStorage.getItem(GUIDE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setGuide = (hidden: boolean) => {
+    setGuideHidden(hidden);
+    try {
+      localStorage.setItem(GUIDE_KEY, hidden ? "1" : "0");
+    } catch {
+      /* private mode — the guide just won't persist */
+    }
+  };
   const overview = useQuery({
     queryKey: ["overview"],
     queryFn: () => api<Overview>("/meta/overview"),
@@ -76,22 +138,73 @@ export default function OverviewPage() {
       {/* Heading */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-semibold leading-8 tracking-[-0.01em]">
-            {me?.memberships[0]?.organization.name ?? "Workspace"}
+          <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.015em]">
+            {greeting()}
+            {me?.user.full_name ? `, ${me.user.full_name.split(" ")[0]}` : ""}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Operational view of your agent runs — every figure comes from persisted execution
-            data.
+            {me?.memberships[0]?.organization.name ?? "Your workspace"} — every figure below
+            comes from persisted execution data.
           </p>
         </div>
-        <Button onClick={() => router.push("/workspace")}>
-          <Plus className="size-4" aria-hidden /> New task
-        </Button>
+        <div className="flex items-center gap-2">
+          {guideHidden && (
+            <Button variant="secondary" onClick={() => setGuide(false)}>
+              How it works
+            </Button>
+          )}
+          <Button onClick={() => router.push("/workspace")}>
+            <Plus className="size-4" aria-hidden /> New task
+          </Button>
+        </div>
       </div>
+
+      {/* Getting started — a real sequence, so the steps are numbered */}
+      {!guideHidden && (
+        <section className="relative rounded-2xl border border-border bg-card p-5 shadow-[0_1px_3px_rgba(23,25,35,0.05)]">
+          <button
+            type="button"
+            aria-label="Hide the guide"
+            onClick={() => setGuide(true)}
+            className="absolute top-3.5 right-3.5 rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+          <h2 className="text-base font-semibold">How AgentOS works</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Four steps from your data to a verified result.
+          </p>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {GUIDE_STEPS.map((step, i) => (
+              <li
+                key={step.title}
+                className="flex flex-col rounded-xl border border-border bg-background/60 p-4"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm font-semibold">{step.title}</p>
+                </div>
+                <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
+                  {step.text}
+                </p>
+                <Link
+                  href={step.href}
+                  className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-primary transition-colors duration-150 hover:text-[#4F48D6]"
+                >
+                  <step.icon className="size-3.5" aria-hidden />
+                  {step.cta}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Total runs" value={data.runs_total} icon={ListTodo} />
+        <StatTile label="Total runs" value={data.runs_total} icon={ListTodo} tone="accent" />
         <StatTile
           label="Successful"
           value={completed}
@@ -113,7 +226,7 @@ export default function OverviewPage() {
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         {/* Recent runs */}
-        <section className="rounded-lg border border-border bg-card lg:col-span-2">
+        <section className="rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(23,25,35,0.05)] lg:col-span-2">
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-semibold">Recent runs</h2>
             <Link
@@ -163,7 +276,7 @@ export default function OverviewPage() {
 
         {/* Side column */}
         <div className="space-y-4">
-          <section className="rounded-lg border border-border bg-card">
+          <section className="rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(23,25,35,0.05)]">
             <h2 className="border-b border-border px-4 py-2.5 text-sm font-semibold">
               Quick start
             </h2>
@@ -187,7 +300,7 @@ export default function OverviewPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-border bg-card">
+          <section className="rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(23,25,35,0.05)]">
             <h2 className="border-b border-border px-4 py-2.5 text-sm font-semibold">
               Activity
             </h2>

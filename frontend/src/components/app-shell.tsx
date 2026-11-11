@@ -172,8 +172,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      {/* Desktop sidebar — a floating panel on the warm canvas */}
+      <aside className="fixed top-3 bottom-3 left-3 z-30 hidden w-60 flex-col overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar shadow-[0_1px_3px_rgba(23,25,35,0.05)] md:flex">
         {brand}
         {nav}
       </aside>
@@ -203,9 +203,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col md:pl-60">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-[16.5rem]">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 bg-background/85 px-4 backdrop-blur md:px-8">
           <Button
             variant="ghost"
             size="icon"
@@ -232,7 +232,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm transition-colors duration-150 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
+                className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-2.5 pl-1 text-sm shadow-[0_1px_2px_rgba(23,25,35,0.04)] transition-colors duration-150 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
                 aria-label="User menu"
               >
                 <span className="flex size-7 items-center justify-center rounded-full bg-[#EEF0FE] text-xs font-semibold text-[#4F48D6]">
