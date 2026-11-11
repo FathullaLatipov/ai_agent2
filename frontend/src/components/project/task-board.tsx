@@ -39,7 +39,7 @@ export function TaskBoard({
                 <button
                   key={task.id}
                   onClick={() => onSelect(task.ordinal)}
-                  className="w-full rounded-md border border-border bg-card px-2.5 py-2 text-left shadow-[0_1px_1px_rgba(16,24,40,0.04)] transition-colors duration-150 hover:border-[#C8CDFB]"
+                  className="w-full rounded-md border border-border bg-card px-2.5 py-2 text-left shadow-[0_1px_1px_rgba(16,24,40,0.04)] transition-colors duration-150 hover:border-[#FED7AA]"
                 >
                   <p className="text-xs font-medium">
                     <span className="mr-1 font-mono text-[10px] text-muted-foreground">

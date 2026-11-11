@@ -132,14 +132,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13.5px] transition-colors duration-150",
                     active
-                      ? "bg-[#EEF0FE] font-medium text-[#4F48D6]"
+                      ? "bg-[#FFEDD5] font-medium text-[#C2410C]"
                       : "text-[#404654] hover:bg-secondary hover:text-foreground",
                   )}
                 >
                   <Icon
                     className={cn(
                       "size-4",
-                      active ? "text-[#635BFF]" : "text-muted-foreground group-hover:text-foreground",
+                      active ? "text-[#EA580C]" : "text-muted-foreground group-hover:text-foreground",
                     )}
                     aria-hidden
                   />
@@ -160,7 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const brand = (
     <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-      <div className="flex size-7 items-center justify-center rounded-md bg-[#635BFF] text-[13px] font-bold text-white shadow-sm">
+      <div className="flex size-7 items-center justify-center rounded-md bg-[#EA580C] text-[13px] font-bold text-white shadow-sm">
         A
       </div>
       <div className="leading-none">
@@ -235,7 +235,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-2.5 pl-1 text-sm shadow-[0_1px_2px_rgba(23,25,35,0.04)] transition-colors duration-150 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
                 aria-label="User menu"
               >
-                <span className="flex size-7 items-center justify-center rounded-full bg-[#EEF0FE] text-xs font-semibold text-[#4F48D6]">
+                <span className="flex size-7 items-center justify-center rounded-full bg-[#FFEDD5] text-xs font-semibold text-[#C2410C]">
                   {mounted && me ? initials(me.user.full_name) : "·"}
                 </span>
                 <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />

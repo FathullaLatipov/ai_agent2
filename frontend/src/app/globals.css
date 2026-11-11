@@ -51,7 +51,7 @@
 /*
  * AgentOS design tokens — warm-paper fintech look (client reference).
  * Canvas #F3F1EC (warm paper) · floating white cards · ink #171923 / #687080
- * warm borders #E6E3DA · primary accent #635BFF (brand, used sparingly:
+ * warm borders #E6E3DA · primary accent #EA580C (brand, used sparingly:
  * one hero tile, selection, links). Status colors (emerald/amber/red/blue)
  * are applied per-component and always paired with an icon + label —
  * color never carries state alone.
@@ -63,7 +63,7 @@
   --card-foreground: #171923;
   --popover: #ffffff;
   --popover-foreground: #171923;
-  --primary: #635bff;
+  --primary: #ea580c;
   --primary-foreground: #ffffff;
   --secondary: #f2f0ea;
   --secondary-foreground: #171923;
@@ -74,8 +74,8 @@
   --destructive: #d92d20;
   --border: #e6e3da;
   --input: #ddd9ce;
-  --ring: #635bff;
-  --chart-1: #635bff;
+  --ring: #ea580c;
+  --chart-1: #ea580c;
   --chart-2: #3b82f6;
   --chart-3: #0ea5e9;
   --chart-4: #8b5cf6;
@@ -83,12 +83,12 @@
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #171923;
-  --sidebar-primary: #635bff;
+  --sidebar-primary: #ea580c;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f2f0ea;
   --sidebar-accent-foreground: #171923;
   --sidebar-border: #e6e3da;
-  --sidebar-ring: #635bff;
+  --sidebar-ring: #ea580c;
 }
 
 @layer base {
@@ -98,12 +98,24 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv11", "ss01";
+    /* A faint neural "constellation" — nodes and connections — over the warm
+       canvas. Cards sit on top, so it only shows in the gaps and never
+       competes with content. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='760' viewBox='0 0 760 760'%3E%3Cg stroke='rgba(23,25,35,0.055)' stroke-width='1'%3E%3Cpath d='M70 95 L225 42 L395 125 L575 72 L700 210'/%3E%3Cpath d='M70 95 L130 270 L345 310 L395 125'/%3E%3Cpath d='M345 310 L540 345 L700 210'/%3E%3Cpath d='M130 270 L95 485 L270 555 L345 310'/%3E%3Cpath d='M270 555 L465 515 L540 345'/%3E%3Cpath d='M465 515 L655 470 L715 580'/%3E%3Cpath d='M95 485 L185 700 L410 672 L465 515'/%3E%3Cpath d='M410 672 L615 655 L655 470'/%3E%3C/g%3E%3Cg fill='rgba(23,25,35,0.09)'%3E%3Ccircle cx='70' cy='95' r='2.5'/%3E%3Ccircle cx='225' cy='42' r='2'/%3E%3Ccircle cx='395' cy='125' r='2.5'/%3E%3Ccircle cx='575' cy='72' r='2'/%3E%3Ccircle cx='130' cy='270' r='2'/%3E%3Ccircle cx='540' cy='345' r='2.5'/%3E%3Ccircle cx='95' cy='485' r='2'/%3E%3Ccircle cx='270' cy='555' r='2.5'/%3E%3Ccircle cx='655' cy='470' r='2'/%3E%3Ccircle cx='185' cy='700' r='2'/%3E%3Ccircle cx='410' cy='672' r='2.5'/%3E%3Ccircle cx='615' cy='655' r='2'/%3E%3Ccircle cx='715' cy='580' r='2'/%3E%3C/g%3E%3Cg fill='rgba(234,88,12,0.16)'%3E%3Ccircle cx='345' cy='310' r='3.5'/%3E%3Ccircle cx='700' cy='210' r='3'/%3E%3Ccircle cx='465' cy='515' r='3'/%3E%3C/g%3E%3Cg fill='none' stroke='rgba(234,88,12,0.12)' stroke-width='1'%3E%3Ccircle cx='345' cy='310' r='7'/%3E%3Ccircle cx='465' cy='515' r='6'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 760px 760px;
+    background-attachment: fixed;
+  }
+  @media (max-width: 768px) {
+    body {
+      /* fixed attachment is janky on mobile browsers */
+      background-attachment: scroll;
+    }
   }
   html {
     @apply font-sans;
   }
   ::selection {
-    background: #e4e2ff;
+    background: #ffe3cf;
   }
   /* Recessive scrollbars that fit the light surfaces. */
   * {

@@ -126,13 +126,13 @@ export default function WorkspacePage() {
         }}
         className={
           dragging
-            ? "rounded-xl border border-[#635BFF] bg-[#FAFAFF] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+            ? "rounded-xl border border-[#EA580C] bg-[#FFF8F3] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
             : "rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
         }
       >
         <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-[#635BFF]" aria-hidden />
+            <Sparkles className="size-4 text-[#EA580C]" aria-hidden />
             <p className="text-sm font-semibold">New task</p>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -229,7 +229,7 @@ export default function WorkspacePage() {
             key={example}
             type="button"
             onClick={() => setInput(example)}
-            className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition-colors duration-150 hover:border-[#C8CDFB] hover:bg-[#FAFAFF] hover:text-foreground"
+            className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition-colors duration-150 hover:border-[#FED7AA] hover:bg-[#FFF8F3] hover:text-foreground"
           >
             {example.length > 60 ? example.slice(0, 60) + "…" : example}
           </button>

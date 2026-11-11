@@ -427,7 +427,7 @@ function TaskCard({ task }: { task: RunTask }) {
       </div>
       <p className="mt-0.5 text-xs text-muted-foreground">{task.objective}</p>
       {summary && (
-        <p className="mt-2 border-l-2 border-[#C8CDFB] pl-2.5 text-xs leading-relaxed text-foreground/80">
+        <p className="mt-2 border-l-2 border-[#FED7AA] pl-2.5 text-xs leading-relaxed text-foreground/80">
           {summary}
         </p>
       )}

@@ -83,8 +83,8 @@ function AgentRow({ agent, modelLabel }: { agent: AgentDefinition; modelLabel: s
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#EEF0FE]">
-          <Icon className="size-4 text-[#4F48D6]" aria-hidden />
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#FFEDD5]">
+          <Icon className="size-4 text-[#C2410C]" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">

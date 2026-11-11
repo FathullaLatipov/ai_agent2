@@ -197,7 +197,7 @@ export default function OverviewPage() {
                 </p>
                 <Link
                   href={step.href}
-                  className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-primary transition-colors duration-150 hover:text-[#4F48D6]"
+                  className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-primary transition-colors duration-150 hover:text-[#C2410C]"
                 >
                   <step.icon className="size-3.5" aria-hidden />
                   {step.cta}
@@ -237,7 +237,7 @@ export default function OverviewPage() {
             <h2 className="text-sm font-semibold">Recent runs</h2>
             <Link
               href="/runs"
-              className="inline-flex items-center gap-0.5 text-xs font-medium text-[#635BFF] transition-colors duration-150 hover:text-[#4F48D6]"
+              className="inline-flex items-center gap-0.5 text-xs font-medium text-[#EA580C] transition-colors duration-150 hover:text-[#C2410C]"
             >
               View all <ArrowUpRight className="size-3" aria-hidden />
             </Link>
@@ -292,7 +292,7 @@ export default function OverviewPage() {
                   key={template.title}
                   onClick={() => quickRun.mutate(template.prompt)}
                   disabled={quickRun.isPending}
-                  className="w-full rounded-md border border-border px-3 py-2.5 text-left transition-colors duration-150 hover:border-[#C8CDFB] hover:bg-[#FAFAFF] disabled:opacity-60"
+                  className="w-full rounded-md border border-border px-3 py-2.5 text-left transition-colors duration-150 hover:border-[#FED7AA] hover:bg-[#FFF8F3] disabled:opacity-60"
                 >
                   <p className="text-[13px] font-medium">{template.title}</p>
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">

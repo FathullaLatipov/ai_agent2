@@ -68,7 +68,7 @@ function JoinForm({ params }: { params: Promise<{ token: string }> }) {
     <main className="flex flex-1 items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm">
         <div className="mb-7 flex flex-col items-center gap-3 text-center">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-[#635BFF] text-lg font-bold text-white shadow-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-[#EA580C] text-lg font-bold text-white shadow-sm">
             A
           </div>
           <div>

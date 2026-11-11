@@ -201,7 +201,7 @@ export function TaskDetailsDialog({
               {detail.run_id && (
                 <Link
                   href={`/runs/${detail.run_id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#635BFF] hover:text-[#4F48D6]"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[#EA580C] hover:text-[#C2410C]"
                 >
                   Open execution run <ExternalLink className="size-3" aria-hidden />
                 </Link>

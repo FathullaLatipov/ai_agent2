@@ -48,7 +48,7 @@ export function Markdown({ children }: { children: string }) {
           td: (p) => <td className="border-b border-border px-3 py-1.5 last:border-b-0" {...p} />,
           a: (p) => (
             <a
-              className="font-medium text-[#635BFF] underline underline-offset-2 hover:text-[#4F48D6]"
+              className="font-medium text-[#EA580C] underline underline-offset-2 hover:text-[#C2410C]"
               {...p}
             />
           ),

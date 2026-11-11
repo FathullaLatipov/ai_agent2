@@ -102,7 +102,7 @@ export default function ApprovalsPage() {
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <Link
                       href={`/runs/${approval.run_id}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#635BFF] transition-colors duration-150 hover:text-[#4F48D6]"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#EA580C] transition-colors duration-150 hover:text-[#C2410C]"
                     >
                       Open run <ExternalLink className="size-3" aria-hidden />
                     </Link>

@@ -50,7 +50,7 @@ export function PMChat({ projectId }: { projectId: string }) {
   return (
     <section className="flex h-[30rem] flex-col rounded-lg border border-border bg-card">
       <h3 className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-sm font-semibold">
-        <Bot className="size-4 text-[#635BFF]" aria-hidden /> Project Manager
+        <Bot className="size-4 text-[#EA580C]" aria-hidden /> Project Manager
       </h3>
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {items.length === 0 && !messages.isLoading && (
@@ -71,7 +71,7 @@ export function PMChat({ projectId }: { projectId: string }) {
               className={cn(
                 "max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-[13px] leading-relaxed",
                 message.role === "owner"
-                  ? "bg-[#635BFF] text-white"
+                  ? "bg-[#EA580C] text-white"
                   : "border border-border bg-secondary/60 text-foreground",
               )}
             >
@@ -96,7 +96,7 @@ export function PMChat({ projectId }: { projectId: string }) {
             <button
               key={suggestion}
               onClick={() => setInput(suggestion)}
-              className="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-[#C8CDFB] hover:text-foreground"
+              className="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-[#FED7AA] hover:text-foreground"
             >
               {suggestion}
             </button>
@@ -115,7 +115,7 @@ export function PMChat({ projectId }: { projectId: string }) {
             onChange={(e) => setInput(e.target.value)}
             placeholder='e.g. "assign #2 to reviewer" or "why is #3 blocked?"'
             aria-label="Message the project manager"
-            className="h-9 flex-1 rounded-md border border-input bg-card px-3 text-sm outline-none transition-colors duration-150 focus-visible:border-[#635BFF] focus-visible:ring-2 focus-visible:ring-[#635BFF]/20"
+            className="h-9 flex-1 rounded-md border border-input bg-card px-3 text-sm outline-none transition-colors duration-150 focus-visible:border-[#EA580C] focus-visible:ring-2 focus-visible:ring-[#EA580C]/20"
           />
           <Button type="submit" size="sm" disabled={send.isPending || !input.trim()}>
             <CornerDownLeft className="size-4" aria-hidden />

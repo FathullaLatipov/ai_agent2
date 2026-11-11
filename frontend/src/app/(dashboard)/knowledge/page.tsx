@@ -126,13 +126,13 @@ export default function KnowledgePage() {
         className={cn(
           "flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed px-4 py-6 transition-colors duration-150",
           dragging
-            ? "border-[#635BFF] bg-[#FAFAFF]"
-            : "border-border bg-card hover:border-[#C8CDFB] hover:bg-[#FCFCFE]",
+            ? "border-[#EA580C] bg-[#FFF8F3]"
+            : "border-border bg-card hover:border-[#FED7AA] hover:bg-[#FCFCFE]",
         )}
         aria-label="Upload a document by clicking or dropping a file"
       >
         <UploadCloud
-          className={cn("size-5", dragging ? "text-[#635BFF]" : "text-muted-foreground")}
+          className={cn("size-5", dragging ? "text-[#EA580C]" : "text-muted-foreground")}
           aria-hidden
         />
         <p className="text-sm font-medium">
