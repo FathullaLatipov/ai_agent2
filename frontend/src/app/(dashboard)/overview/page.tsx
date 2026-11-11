@@ -121,6 +121,12 @@ export default function OverviewPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  // Greet by first name, but not with service-account words.
+  const rawFirst = me?.user.full_name?.trim().split(/\s+/)[0] ?? "";
+  const firstName = /^(workspace|admin|administrator|demo|owner|user)$/i.test(rawFirst)
+    ? ""
+    : rawFirst;
+
   if (overview.isLoading) return <LoadingRows rows={6} />;
   if (overview.isError)
     return <ErrorState message={overview.error.message} retry={() => overview.refetch()} />;
@@ -140,7 +146,7 @@ export default function OverviewPage() {
         <div>
           <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.015em]">
             {greeting()}
-            {me?.user.full_name ? `, ${me.user.full_name.split(" ")[0]}` : ""}
+            {firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {me?.memberships[0]?.organization.name ?? "Your workspace"} — every figure below
